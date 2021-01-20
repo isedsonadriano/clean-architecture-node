@@ -122,8 +122,7 @@ describe("SignUp Controller", () => {
     const emailValidatorStub = new EmailValidatorStub()
     const sut = new SignUpController(emailValidatorStub)
 
-    
-    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+       
     const httpRequest = {
       body: {
         name: "any_name",
