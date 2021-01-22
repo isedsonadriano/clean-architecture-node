@@ -165,14 +165,14 @@ describe("SignUp Controller", () => {
         passwordConfirmation: "any_password",
       },
     };
-    const httpResponse = sut.handle(httpRequest);
-    expect(httpResponse.statusCode).toBe(500);
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError());
   });
 
   test("Should call AddAcount with correct values", () => {
-    const { sut, addAccountStub } = makeSut();
-    const addSpy = jest.spyOn(addAccountStub, "add");
+    const { sut, addAccountStub } = makeSut()
+    const addSpy = jest.spyOn(addAccountStub, "add")
 
     const httpRequest = {
       body: {
@@ -187,6 +187,48 @@ describe("SignUp Controller", () => {
       name: "any_name",
       email: "valid_email@mail.com",
       password: "any_password",
+    })
+  })
+
+  test("Should return 500 if addAccount throws", () => {
+    const { sut, addAccountStub } = makeSut();
+    jest.spyOn(addAccountStub, "add").mockImplementationOnce(() => {
+      throw new Error();
     });
+
+    const httpRequest = {
+      body: {
+        name: "any_name",
+        email: "invalid_email@mail.com",
+        password: "any_password",
+        passwordConfirmation: "any_password",
+      },
+    };
+    const httpResponse = sut.handle(httpRequest);
+    expect(httpResponse.statusCode).toBe(500);
+    expect(httpResponse.body).toEqual(new ServerError());
   });
-});
+
+  test("shoud return 200 if valid data is provided", () => {
+    const { sut } = makeSut();
+    const httpRequest = {
+      body: {
+        name: "valid_name",
+        email: 'valid_email@mail.com',
+        password: "valid_password",
+        passwordConfirmation: "valid_password",
+      },
+    };
+    const httpResponse = sut.handle(httpRequest);
+    expect(httpResponse.statusCode).toBe(200);
+    expect(httpResponse.body).toEqual(
+      {
+        id: "valid_id",
+        name: "valid_name",
+        email: 'valid_email@mail.com',
+        password: "valid_password"
+      }
+    );
+  });
+
+})
