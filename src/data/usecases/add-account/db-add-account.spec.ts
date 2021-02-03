@@ -1,8 +1,8 @@
 import { DbAddAccount } from "./db-add-account"
-import {  Encryper , AddAccountModel, AccountModel, AddAccountRepository} from "./db-add-account-protocols"
+import {  Encrypter , AddAccountModel, AccountModel, AddAccountRepository} from "./db-add-account-protocols"
 
-const makeEncryper  = (): Encryper => {
-    class EncryperStub implements Encryper{
+const makeEncryper  = (): Encrypter => {
+    class EncryperStub implements Encrypter{
         async encrypt(value:string): Promise<string>{
             return new Promise(resolve => resolve('hashed_password'))
         }
@@ -39,7 +39,7 @@ const makeSut = (): SutTypes =>{
 
 interface SutTypes{
     sut: DbAddAccount
-    encrypterStub: Encryper,
+    encrypterStub: Encrypter,
     addAccountRepositoryStub: AddAccountRepository
 }
 
@@ -95,4 +95,21 @@ describe('DbAaddAccount UseCase', () => {
         const promise =  sut.add(accountData)
         await expect(promise).rejects.toThrow()
     })
+
+    test('Should return an account on sucess ', async () =>{
+        const {sut } = makeSut()
+        const accountData = {
+            name: 'valid_name',
+            email: 'valid_email',
+            password: 'hashed_password'
+        }
+        const account = await sut.add(accountData)
+        expect(account).toEqual({
+            id: 'valid_id',
+            name: 'valid_name',
+            email: 'valid_email',
+            password: 'hashed_password'
+        })
+    })
+
 })
