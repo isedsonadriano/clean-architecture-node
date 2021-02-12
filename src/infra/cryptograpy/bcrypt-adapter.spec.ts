@@ -2,7 +2,7 @@ import { testEnvironment } from "../../../jest.config"
 
 import bcrypt from 'bcrypt'
 import { BcryptAdapter } from "./bcrypt-adapter"
-import { rejects } from "assert"
+
 
 jest.mock('bcrypt', () =>({
     async hash (): Promise<string> {
