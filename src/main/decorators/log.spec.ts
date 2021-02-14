@@ -1,7 +1,31 @@
 import { Controller, HttpRequest, HttpResponse } from "../../presentation/protocols";
 import { LogControllerDecorator } from "./log";
-import { serverError } from '../..//presentation/helpers/http-helper'
-import { LogErrorRepository } from "../../data/protocols/log-error-repository copy";
+import { ok, serverError } from '../..//presentation/helpers/http-helper'
+import { AccountModel } from "../../domain/models/account";
+import { LogErrorRepository } from "../../data/protocols/log-error-repository";
+
+
+const makeFakeRequest = (): HttpRequest =>({ 
+  body: {
+    name: "any_name",
+    email: "valid_email@mail.com",
+    password: "any_password",
+    passwordConfirmation: "any_password",
+  }
+})
+
+const makeFakeAccount = (): AccountModel =>({
+  id: "valid_id",
+  name: "valid_name",
+  email: 'valid_email@mail.com',
+  password: "valid_password"
+})
+
+const makeServerError = ():HttpResponse =>{
+  const fakeError = new Error()
+  fakeError.stack = 'any_stack'
+  return serverError(fakeError)
+}
 
 interface SutTypes {
   sut: LogControllerDecorator
@@ -12,7 +36,7 @@ interface SutTypes {
 const makeLogErrorRepository = ():LogErrorRepository =>{
   
   class LogErrorRepositoryStub implements LogErrorRepository{ 
-    async log(stack:string): Promise<void> {
+    async logError(stack:string): Promise<void> {
       return new Promise(resolve => resolve())
     }
     
@@ -23,13 +47,7 @@ const makeLogErrorRepository = ():LogErrorRepository =>{
 const makeController = (): Controller =>{
   class ControllerStub implements Controller{ 
     handle(httpRequest: HttpRequest): Promise<HttpResponse> {
-      const httpResponse:HttpResponse = {
-        statusCode: 200,
-        body:{
-          name: 'Edson'
-        }
-      }
-      return new Promise(resolve => resolve(httpResponse))
+      return new Promise(resolve => resolve(ok(makeFakeAccount())))
     }
     
   }
@@ -50,68 +68,26 @@ const makeSut = ():SutTypes =>{
 describe("LogController Decorator", () => {
   
   test("Should call controller handle", async() => {
-
     const {sut} = makeSut()
-    const httpRequest = {
-      body:{
-        email: 'any_email@mail.com',
-        name: 'any_name',
-        password: 'any_password',
-        passwordConfirmation: 'any_password',
-      }
-    } 
-
-    const httpResponse = await sut.handle(httpRequest)
-    expect(httpResponse).toEqual({
-        statusCode: 200,
-        body:{
-          name: 'Edson'
-        }
-     })
+    const httpResponse = await sut.handle(makeFakeRequest())
+    expect(httpResponse).toEqual(ok(makeFakeAccount()))
   })
 
   test("Should call logErrorRepository  with correct error if returns  a server error", async() => {
 
     const {sut, controllerStub, logErrorRepositoryStub} = makeSut()
-    const fakeError = new Error()
-    fakeError.stack = 'any_stack'
-    const error = serverError(fakeError)
-    const logSpy = jest.spyOn(logErrorRepositoryStub, 'log')
-    jest.spyOn(controllerStub, 'handle').mockReturnValueOnce( new Promise(resolve => resolve(error)))
-    
-    const httpRequest = {
-      body:{
-        email: 'any_email@mail.com',
-        name: 'any_name',
-        password: 'any_password',
-        passwordConfirmation: 'any_password',
-      }
-    } 
+    const logSpy = jest.spyOn(logErrorRepositoryStub, 'logError')
+    jest.spyOn(controllerStub, 'handle').mockReturnValueOnce( new Promise(resolve => resolve(makeServerError())))
 
-    await sut.handle(httpRequest)
+    await sut.handle(makeFakeRequest())
     expect(logSpy).toHaveBeenLastCalledWith('any_stack')
   })
 
   test("Should return the same result of the controller logErrorRepository  with correct error if returns  a server error", async() => {
-
     const {sut} = makeSut()
-   
-    const httpRequest = {
-      body:{
-        email: 'any_email@mail.com',
-        name: 'any_name',
-        password: 'any_password',
-        passwordConfirmation: 'any_password',
-      }
-    } 
-
+    const httpRequest = makeFakeRequest()
     const httpResponse = await sut.handle(httpRequest)
-    expect(httpResponse).toEqual({
-      statusCode: 200,
-      body:{
-        name: 'Edson'
-      }
-    })
+    expect(httpResponse).toEqual(ok(makeFakeAccount()))
   })
 
 })
